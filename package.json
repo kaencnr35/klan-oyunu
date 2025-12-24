@@ -1,6 +1,6 @@
 {
-  "name": "klan-savaslari-rpg",
-  "version": "2.5.0",
+  "name": "klan-savaslari-pro",
+  "version": "3.0.0",
   "description": "Premium RPG Bot",
   "main": "index.js",
   "scripts": {
