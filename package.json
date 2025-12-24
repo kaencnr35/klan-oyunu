@@ -1,7 +1,7 @@
 {
   "name": "klan-savaslari-rpg",
-  "version": "2.0.0",
-  "description": "Telegram RPG Bot",
+  "version": "2.5.0",
+  "description": "Premium RPG Bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
