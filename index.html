@@ -3,200 +3,265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Klan Savaşları</title>
+    <title>Klan RPG</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            background-color: #111;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-            text-align: center;
-        }
-
-        /* Arka plan efekti */
-        .bg-glow {
-            position: absolute;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(255,0,0,0.2) 0%, rgba(0,0,0,0) 70%);
-            z-index: 0;
-            animation: pulse 3s infinite;
-        }
-
-        .container {
-            z-index: 10;
-            width: 90%;
-            max-width: 400px;
-            background: rgba(30, 30, 30, 0.9);
-            padding: 20px;
-            border-radius: 20px;
-            border: 2px solid #333;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        h1 { margin: 0; font-size: 24px; color: #ff4444; text-transform: uppercase; letter-spacing: 2px; }
+        body { margin: 0; background: #0f0f0f; color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
-        .stats {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-            background: #222;
-            padding: 10px;
-            border-radius: 10px;
-        }
+        /* Üst Bilgi Paneli */
+        .header { background: #1a1a1a; padding: 10px; display: flex; justify-content: space-between; border-bottom: 2px solid #333; }
+        .stat { font-size: 14px; font-weight: bold; }
+        .gold { color: #ffd700; }
+        .xp { color: #00bfff; }
+        .energy { color: #32cd32; }
 
-        .stat-box { font-size: 14px; }
-        .stat-val { font-size: 18px; font-weight: bold; color: #ffd700; display: block; }
-
-        .log-area {
-            height: 80px;
-            background: #000;
-            border: 1px solid #333;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            color: #888;
-            font-size: 14px;
-            padding: 10px;
-        }
+        /* Ana Sahne */
+        .main-stage { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; background-size: cover; background-position: center; transition: background 0.5s; }
+        .monster-img { width: 200px; height: 200px; object-fit: contain; filter: drop-shadow(0 0 10px #000); transition: transform 0.2s; z-index: 2; }
         
-        .log-win { color: #4caf50; font-weight: bold; }
-        .log-lose { color: #f44336; font-weight: bold; }
+        /* Efektler */
+        .shake { animation: shake 0.5s; }
+        .damage-text { position: absolute; color: red; font-size: 30px; font-weight: bold; animation: floatUp 1s forwards; z-index: 10; }
+        
+        /* Market ve Menü */
+        .menu-tabs { display: flex; background: #222; height: 50px; }
+        .tab { flex: 1; text-align: center; line-height: 50px; cursor: pointer; border-top: 2px solid transparent; }
+        .tab.active { border-color: #ffd700; background: #333; color: #ffd700; }
 
-        .btn-fight {
-            background: linear-gradient(180deg, #ff4444 0%, #cc0000 100%);
-            border: none;
-            color: white;
-            padding: 15px 40px;
-            font-size: 20px;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4);
-            transition: transform 0.1s;
-            width: 80%;
-            font-weight: bold;
-        }
+        /* İçerik Alanları */
+        .content-area { display: none; height: 100%; width: 100%; overflow-y: auto; background: rgba(0,0,0,0.9); position: absolute; top: 0; z-index: 5; }
+        .content-area.show { display: block; }
+        
+        /* Market Grid */
+        .market-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
+        .item-card { background: #333; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #444; }
+        .item-icon { font-size: 30px; }
+        .btn-buy { background: #ffd700; color: #000; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-top: 5px; width: 100%; font-weight: bold; }
+        .btn-buy:disabled { background: #555; cursor: not-allowed; }
 
-        .btn-fight:active { transform: scale(0.95); }
-        .btn-fight:disabled { background: #555; cursor: not-allowed; box-shadow: none; }
+        /* Savaş Butonu */
+        .btn-fight { position: absolute; bottom: 80px; width: 80%; padding: 15px; font-size: 20px; background: linear-gradient(45deg, #ff4444, #880000); color: white; border: none; border-radius: 30px; box-shadow: 0 0 20px rgba(255,0,0,0.5); cursor: pointer; z-index: 3; font-weight: bold; }
+        .btn-fight:disabled { background: #444; box-shadow: none; }
 
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.2); opacity: 0.8; }
-            100% { transform: scale(1); opacity: 0.5; }
-        }
+        /* Animasyonlar */
+        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+        @keyframes floatUp { 0% { top: 50%; opacity: 1; } 100% { top: 30%; opacity: 0; } }
+
+        .zindan-info { position: absolute; top: 10px; width: 100%; text-align: center; font-size: 20px; font-weight: bold; text-shadow: 0 0 10px #000; z-index: 3; }
     </style>
 </head>
 <body>
 
-    <div class="bg-glow"></div>
+    <div class="header">
+        <div class="stat gold">💰 <span id="ui-gold">0</span></div>
+        <div class="stat xp">✨ Lvl <span id="ui-lvl">1</span></div>
+        <div class="stat energy">⚡ <span id="ui-energy">0</span>/200</div>
+    </div>
 
-    <div class="container">
-        <h1>⚔️ ARENA ⚔️</h1>
-        <div id="klan-ad" style="color: #aaa; margin-bottom: 10px;">Klan Yükleniyor...</div>
+    <div id="tab-arena" class="main-stage" style="background-image: url('https://c4.wallpaperflare.com/wallpaper/32/375/363/fantasy-art-rpg-video-games-strategy-wallpaper-preview.jpg');">
+        <div class="zindan-info" id="ui-stage">Zindan: 1. Kat</div>
+        
+        <img id="monster" src="https://cdn-icons-png.flaticon.com/512/1205/1205510.png" class="monster-img">
+        
+        <button class="btn-fight" id="btn-savas" onclick="savasYap()">⚔️ SAVAŞ (10 Enerji)</button>
+    </div>
 
-        <div class="stats">
-            <div class="stat-box">💰 ALTIN<span class="stat-val" id="altin">...</span></div>
-            <div class="stat-box">✨ XP<span class="stat-val" id="xp">...</span></div>
+    <div id="tab-market" class="content-area">
+        <h2 style="text-align: center; color: #ffd700;">SİLAH & ZIRH MARKETİ</h2>
+        <div class="market-grid" id="market-list">
+            </div>
+    </div>
+
+    <div id="tab-profil" class="content-area">
+        <div style="padding: 20px; text-align: center;">
+            <h2 id="p-isim">Savaşçı</h2>
+            <p>Klan: <span id="p-klan">-</span></p>
+            <p>Saldırı Gücü: <span id="p-saldiri">0</span></p>
+            <p>Savunma Gücü: <span id="p-savunma">0</span></p>
+            <hr>
+            <h3>ENVANTER</h3>
+            <div id="p-envanter" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;"></div>
         </div>
+    </div>
 
-        <div class="log-area" id="log">
-            Arenaya hoş geldin!<br>Savaşmak için butona bas.
-        </div>
-
-        <button class="btn-fight" id="btnSavas" onclick="savasYap()">⚔️ SAVAŞ ⚔️</button>
+    <div class="menu-tabs">
+        <div class="tab active" onclick="tabDegis('arena')">🏟️ ARENA</div>
+        <div class="tab" onclick="tabDegis('market')">🛒 MARKET</div>
+        <div class="tab" onclick="tabDegis('profil')">👤 PROFİL</div>
     </div>
 
     <script>
-        // Telegram Web App nesnesini al
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Sayfayı tam ekran yap
+        tg.expand();
+        const telegramId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : null;
 
-        // Kullanıcı ID'sini Telegram'dan alıyoruz
-        const user = tg.initDataUnsafe.user;
-        const telegramId = user ? user.id : null; 
-        
-        // Eğer ID yoksa (Tarayıcıdan girildiyse) hata ver
-        if (!telegramId) {
-            document.getElementById('log').innerHTML = "Lütfen Telegram'dan giriş yapın.";
-            document.getElementById('btnSavas').disabled = true;
+        // Canavar Resimleri (Seviye 1'den 10'a)
+        const MONSTERS = [
+            "https://cdn-icons-png.flaticon.com/512/3062/3062634.png", // 1 - Goblin
+            "https://cdn-icons-png.flaticon.com/512/1998/1998610.png", // 2 - Ork
+            "https://cdn-icons-png.flaticon.com/512/1205/1205510.png", // 3 - İskelet
+            "https://cdn-icons-png.flaticon.com/512/3135/3135715.png", // 4 - Kurt
+            "https://cdn-icons-png.flaticon.com/512/1236/1236413.png", // 5 - Şövalye
+            "https://cdn-icons-png.flaticon.com/512/2102/2102914.png", // 6 - Büyücü
+            "https://cdn-icons-png.flaticon.com/512/3135/3135789.png", // 7 - Golem
+            "https://cdn-icons-png.flaticon.com/512/3062/3062650.png", // 8 - Ruh
+            "https://cdn-icons-png.flaticon.com/512/3305/3305963.png", // 9 - Ejderha Yavrusu
+            "https://cdn-icons-png.flaticon.com/512/2153/2153072.png"  // 10 - BOSS
+        ];
+
+        let oyuncuVerisi = null;
+
+        // Başlangıç
+        if (telegramId) {
+            veriGuncelle();
+            marketYukle();
         } else {
-            bilgileriGuncelle();
+            document.body.innerHTML = "<h1 style='text-align:center'>Lütfen Telegram'dan girin.</h1>";
         }
 
-        // [API] Kullanıcı Bilgilerini Çek
-        async function bilgileriGuncelle() {
+        async function veriGuncelle() {
             try {
                 const res = await fetch(`/api/user/${telegramId}`);
                 const data = await res.json();
-                
-                if (data.error) {
-                    document.getElementById('log').innerText = data.error;
-                } else {
-                    document.getElementById('altin').innerText = data.altin;
-                    document.getElementById('xp').innerText = data.xp;
-                    document.getElementById('klan-ad').innerText = (data.klan || "Klansız") + " Klanı";
-                }
-            } catch (err) {
-                console.error(err);
+                oyuncuVerisi = data;
+                arayuzGuncelle(data);
+            } catch(e) { console.log(e); }
+        }
+
+        function arayuzGuncelle(data) {
+            // Header
+            document.getElementById('ui-gold').innerText = data.altin;
+            document.getElementById('ui-lvl').innerText = data.seviye;
+            document.getElementById('ui-energy').innerText = data.enerji;
+            
+            // Arena
+            document.getElementById('ui-stage').innerText = data.zindanSeviyesi === 10 ? "👑 BOSS SAVAŞI 👑" : `Zindan: ${data.zindanSeviyesi}. Kat`;
+            document.getElementById('monster').src = MONSTERS[data.zindanSeviyesi - 1] || MONSTERS[0];
+
+            if(data.zindanSeviyesi === 10) {
+                document.getElementById('monster').style.width = "250px";
+                document.getElementById('monster').style.filter = "drop-shadow(0 0 20px red)";
+            } else {
+                document.getElementById('monster').style.width = "200px";
+                document.getElementById('monster').style.filter = "drop-shadow(0 0 10px black)";
+            }
+
+            // Profil
+            document.getElementById('p-isim').innerText = data.isim;
+            document.getElementById('p-klan').innerText = data.klan || "Yok";
+            document.getElementById('p-saldiri').innerText = data.saldiri;
+            document.getElementById('p-savunma').innerText = data.savunma;
+            
+            // Envanter Görseli
+            const envDiv = document.getElementById('p-envanter');
+            envDiv.innerHTML = "";
+            data.envanter.forEach(id => {
+                const span = document.createElement('span');
+                span.style.fontSize = "30px";
+                if(id.includes('kilic')) span.innerText = "🗡️";
+                if(id.includes('asa')) span.innerText = "🔥";
+                if(id.includes('hancer')) span.innerText = "🔪";
+                if(id.includes('zirh')) span.innerText = "🛡️";
+                envDiv.appendChild(span);
+            });
+        }
+
+        async function marketYukle() {
+            const res = await fetch('/api/market');
+            const items = await res.json();
+            const list = document.getElementById('market-list');
+            
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'item-card';
+                div.innerHTML = `
+                    <div class="item-icon">${item.resim}</div>
+                    <div style="font-weight:bold; color:orange">${item.ad}</div>
+                    <div style="font-size:12px; color:#ccc">+${item.deger} ${item.tur == 'silah' ? 'Saldırı' : 'Defans'}</div>
+                    <div style="color:#ffd700">${item.fiyat} Altın</div>
+                    <button class="btn-buy" onclick="satinAl('${item.id}')">SATIN AL</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        async function satinAl(itemId) {
+            tg.HapticFeedback.impactOccurred('medium');
+            const res = await fetch('/api/satin-al', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ telegramId, itemId })
+            });
+            const data = await res.json();
+            
+            if(data.error) {
+                tg.showAlert(data.error);
+            } else {
+                tg.showPopup({ title: 'Başarılı', message: data.mesaj });
+                veriGuncelle(); // Altın ve gücü güncelle
             }
         }
 
-        // [API] Savaş Yap Butonu
         async function savasYap() {
-            const btn = document.getElementById('btnSavas');
-            const log = document.getElementById('log');
+            const btn = document.getElementById('btn-savas');
+            if(oyuncuVerisi.enerji < 10) return tg.showAlert("Enerjin bitti! Biraz dinlen.");
             
-            // Butonu geçici olarak devre dışı bırak (spam engelleme)
             btn.disabled = true;
-            btn.innerText = "Savaşıyor...";
-            log.innerHTML = "Düşman aranıyor...";
+            btn.innerText = "Saldırılıyor...";
+            
+            // Animasyon Efekti
+            const monster = document.getElementById('monster');
+            monster.classList.add('shake');
+            tg.HapticFeedback.impactOccurred('heavy');
 
-            try {
+            setTimeout(async () => {
+                monster.classList.remove('shake');
+                
                 const res = await fetch('/api/savas', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telegramId: telegramId })
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ telegramId })
                 });
                 const data = await res.json();
-
-                if (data.error) {
-                    log.innerHTML = `<span class="log-lose">${data.error}</span>`;
+                
+                if(data.error) {
+                    tg.showAlert(data.error);
                 } else {
-                    // Sonucu Ekrana Bas
-                    if (data.kazandimi) {
-                        log.innerHTML = `<span class="log-win">${data.mesaj}</span><br>${data.detay}`;
-                        // Titreşim efekti (Telegram özelliği)
-                        tg.HapticFeedback.notificationOccurred('success');
+                    // Hasar Yazısı Animasyonu
+                    const dmg = document.createElement('div');
+                    dmg.className = 'damage-text';
+                    dmg.innerText = "POW!";
+                    dmg.style.left = "50%";
+                    dmg.style.top = "40%";
+                    document.body.appendChild(dmg);
+                    setTimeout(() => dmg.remove(), 1000);
+
+                    if(data.kazandimi) {
+                        tg.showPopup({ title: 'ZAFER!', message: data.detay });
                     } else {
-                        log.innerHTML = `<span class="log-lose">${data.mesaj}</span><br>${data.detay}`;
-                        tg.HapticFeedback.notificationOccurred('error');
+                        tg.showPopup({ title: 'YENİLDİN!', message: data.detay });
                     }
                     
-                    // Altınları güncelle
-                    document.getElementById('altin').innerText = data.yeniAltin;
-                    document.getElementById('xp').innerText = data.yeniXp;
+                    veriGuncelle();
                 }
-
-            } catch (err) {
-                log.innerText = "Bağlantı hatası!";
-            }
-
-            // Butonu tekrar aç
-            setTimeout(() => {
+                
                 btn.disabled = false;
-                btn.innerText = "⚔️ TEKRAR SAVAŞ ⚔️";
-            }, 1000); // 1 saniye bekleme süresi
+                btn.innerText = "⚔️ SAVAŞ (10 Enerji)";
+            }, 500);
+        }
+
+        function tabDegis(tab) {
+            document.querySelectorAll('.content-area').forEach(el => el.classList.remove('show'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            
+            if(tab === 'arena') {
+                document.getElementById('tab-arena').style.display = 'flex';
+            } else {
+                document.getElementById('tab-arena').style.display = 'none';
+                document.getElementById('tab-' + tab).classList.add('show');
+            }
+            // Tab butonu aktifliği (basit hack)
+            event.target.classList.add('active');
         }
     </script>
 </body>

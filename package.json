@@ -1,7 +1,7 @@
 {
-  "name": "klan-savaslari",
-  "version": "1.0.0",
-  "description": "Telegram Web App Bot",
+  "name": "klan-savaslari-rpg",
+  "version": "2.0.0",
+  "description": "Telegram RPG Bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
