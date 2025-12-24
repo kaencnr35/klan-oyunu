@@ -2,52 +2,202 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Klan Savaşları Arena</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Klan Savaşları</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { margin: 0; background: #0a0a0a; color: white; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        h1 { font-size: 2.5rem; text-shadow: 0 0 10px #ff0000; z-index: 2; text-align: center; margin-bottom: 10px; }
-        .container { z-index: 2; text-align: center; background: rgba(20, 0, 0, 0.8); padding: 30px; border: 2px solid #ff4444; border-radius: 15px; box-shadow: 0 0 30px rgba(255, 0, 0, 0.3); max-width: 90%; }
-        p { color: #aaa; margin-bottom: 20px; font-size: 1.1rem; }
-        .status { font-weight: bold; color: #4caf50; }
-        canvas { position: absolute; top: 0; left: 0; z-index: 1; opacity: 0.6; }
+        body {
+            background-color: #111;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        /* Arka plan efekti */
+        .bg-glow {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255,0,0,0.2) 0%, rgba(0,0,0,0) 70%);
+            z-index: 0;
+            animation: pulse 3s infinite;
+        }
+
+        .container {
+            z-index: 10;
+            width: 90%;
+            max-width: 400px;
+            background: rgba(30, 30, 30, 0.9);
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        h1 { margin: 0; font-size: 24px; color: #ff4444; text-transform: uppercase; letter-spacing: 2px; }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            background: #222;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .stat-box { font-size: 14px; }
+        .stat-val { font-size: 18px; font-weight: bold; color: #ffd700; display: block; }
+
+        .log-area {
+            height: 80px;
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: #888;
+            font-size: 14px;
+            padding: 10px;
+        }
+        
+        .log-win { color: #4caf50; font-weight: bold; }
+        .log-lose { color: #f44336; font-weight: bold; }
+
+        .btn-fight {
+            background: linear-gradient(180deg, #ff4444 0%, #cc0000 100%);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            font-size: 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4);
+            transition: transform 0.1s;
+            width: 80%;
+            font-weight: bold;
+        }
+
+        .btn-fight:active { transform: scale(0.95); }
+        .btn-fight:disabled { background: #555; cursor: not-allowed; box-shadow: none; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 0.5; }
+        }
     </style>
 </head>
 <body>
-    <canvas id="bgCanvas"></canvas>
+
+    <div class="bg-glow"></div>
 
     <div class="container">
-        <h1>⚔️ KLAN SAVAŞLARI ⚔️</h1>
-        <p>Burası Savaş Arenası!</p>
-        <p>Bot üzerinden komut vererek savaşları yönetebilirsin.</p>
-        <div style="margin-top: 20px; border-top: 1px solid #555; padding-top: 10px;">
-            <div>Sunucu Durumu: <span class="status">AKTİF 🟢</span></div>
-            <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">v1.2 - Reset Update</div>
+        <h1>⚔️ ARENA ⚔️</h1>
+        <div id="klan-ad" style="color: #aaa; margin-bottom: 10px;">Klan Yükleniyor...</div>
+
+        <div class="stats">
+            <div class="stat-box">💰 ALTIN<span class="stat-val" id="altin">...</span></div>
+            <div class="stat-box">✨ XP<span class="stat-val" id="xp">...</span></div>
         </div>
+
+        <div class="log-area" id="log">
+            Arenaya hoş geldin!<br>Savaşmak için butona bas.
+        </div>
+
+        <button class="btn-fight" id="btnSavas" onclick="savasYap()">⚔️ SAVAŞ ⚔️</button>
     </div>
 
     <script>
-        // Arka plan animasyonu (Matrix tarzı kırmızı yağmur)
-        const canvas = document.getElementById('bgCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*";
-        const drops = Array(Math.floor(canvas.width / 20)).fill(1);
+        // Telegram Web App nesnesini al
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Sayfayı tam ekran yap
 
-        function draw() {
-            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#ff0000";
-            ctx.font = "15px monospace";
-            for (let i = 0; i < drops.length; i++) {
-                const text = chars[Math.floor(Math.random() * chars.length)];
-                ctx.fillText(text, i * 20, drops[i] * 20);
-                if (drops[i] * 20 > canvas.height && Math.random() > 0.975) drops[i] = 0;
-                drops[i]++;
+        // Kullanıcı ID'sini Telegram'dan alıyoruz
+        const user = tg.initDataUnsafe.user;
+        const telegramId = user ? user.id : null; 
+        
+        // Eğer ID yoksa (Tarayıcıdan girildiyse) hata ver
+        if (!telegramId) {
+            document.getElementById('log').innerHTML = "Lütfen Telegram'dan giriş yapın.";
+            document.getElementById('btnSavas').disabled = true;
+        } else {
+            bilgileriGuncelle();
+        }
+
+        // [API] Kullanıcı Bilgilerini Çek
+        async function bilgileriGuncelle() {
+            try {
+                const res = await fetch(`/api/user/${telegramId}`);
+                const data = await res.json();
+                
+                if (data.error) {
+                    document.getElementById('log').innerText = data.error;
+                } else {
+                    document.getElementById('altin').innerText = data.altin;
+                    document.getElementById('xp').innerText = data.xp;
+                    document.getElementById('klan-ad').innerText = (data.klan || "Klansız") + " Klanı";
+                }
+            } catch (err) {
+                console.error(err);
             }
         }
-        setInterval(draw, 50);
+
+        // [API] Savaş Yap Butonu
+        async function savasYap() {
+            const btn = document.getElementById('btnSavas');
+            const log = document.getElementById('log');
+            
+            // Butonu geçici olarak devre dışı bırak (spam engelleme)
+            btn.disabled = true;
+            btn.innerText = "Savaşıyor...";
+            log.innerHTML = "Düşman aranıyor...";
+
+            try {
+                const res = await fetch('/api/savas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegramId: telegramId })
+                });
+                const data = await res.json();
+
+                if (data.error) {
+                    log.innerHTML = `<span class="log-lose">${data.error}</span>`;
+                } else {
+                    // Sonucu Ekrana Bas
+                    if (data.kazandimi) {
+                        log.innerHTML = `<span class="log-win">${data.mesaj}</span><br>${data.detay}`;
+                        // Titreşim efekti (Telegram özelliği)
+                        tg.HapticFeedback.notificationOccurred('success');
+                    } else {
+                        log.innerHTML = `<span class="log-lose">${data.mesaj}</span><br>${data.detay}`;
+                        tg.HapticFeedback.notificationOccurred('error');
+                    }
+                    
+                    // Altınları güncelle
+                    document.getElementById('altin').innerText = data.yeniAltin;
+                    document.getElementById('xp').innerText = data.yeniXp;
+                }
+
+            } catch (err) {
+                log.innerText = "Bağlantı hatası!";
+            }
+
+            // Butonu tekrar aç
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerText = "⚔️ TEKRAR SAVAŞ ⚔️";
+            }, 1000); // 1 saniye bekleme süresi
+        }
     </script>
 </body>
 </html>
