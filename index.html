@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klan Savaşları Arena</title>
+    <style>
+        body { margin: 0; background: #0a0a0a; color: white; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        h1 { font-size: 2.5rem; text-shadow: 0 0 10px #ff0000; z-index: 2; text-align: center; margin-bottom: 10px; }
+        .container { z-index: 2; text-align: center; background: rgba(20, 0, 0, 0.8); padding: 30px; border: 2px solid #ff4444; border-radius: 15px; box-shadow: 0 0 30px rgba(255, 0, 0, 0.3); max-width: 90%; }
+        p { color: #aaa; margin-bottom: 20px; font-size: 1.1rem; }
+        .status { font-weight: bold; color: #4caf50; }
+        canvas { position: absolute; top: 0; left: 0; z-index: 1; opacity: 0.6; }
+    </style>
+</head>
+<body>
+    <canvas id="bgCanvas"></canvas>
+
+    <div class="container">
+        <h1>⚔️ KLAN SAVAŞLARI ⚔️</h1>
+        <p>Burası Savaş Arenası!</p>
+        <p>Bot üzerinden komut vererek savaşları yönetebilirsin.</p>
+        <div style="margin-top: 20px; border-top: 1px solid #555; padding-top: 10px;">
+            <div>Sunucu Durumu: <span class="status">AKTİF 🟢</span></div>
+            <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">v1.2 - Reset Update</div>
+        </div>
+    </div>
+
+    <script>
+        // Arka plan animasyonu (Matrix tarzı kırmızı yağmur)
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*";
+        const drops = Array(Math.floor(canvas.width / 20)).fill(1);
+
+        function draw() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ff0000";
+            ctx.font = "15px monospace";
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * 20, drops[i] * 20);
+                if (drops[i] * 20 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(draw, 50);
+    </script>
+</body>
+</html>
